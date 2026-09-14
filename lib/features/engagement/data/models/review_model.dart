@@ -20,11 +20,11 @@ class ReviewModel {
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
     return ReviewModel(
       id: json['id'] as String,
-      eventId: json['eventId'] as String,
+      eventId: json['eventId'] as String? ?? '',
       userId: json['userId'] as String,
-      userName: json['userName'] as String,
+      userName: json['userName'] as String? ?? 'Usuario',
       rating: json['rating'] as int,
-      comment: json['comment'] as String,
+      comment: json['comment'] as String? ?? '',
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }

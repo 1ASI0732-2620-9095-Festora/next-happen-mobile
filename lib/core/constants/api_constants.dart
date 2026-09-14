@@ -10,8 +10,7 @@ class ApiConstants {
 
   static const String _localNetworkIp = '192.168.1.100';
 
-
-  static const String _productionUrl = '';
+  static const String _productionUrl = 'https://next-happen-backend.onrender.com';
 
 
   static const bool _isPhysicalDevice = false;

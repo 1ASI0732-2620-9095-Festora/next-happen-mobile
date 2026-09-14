@@ -5,13 +5,14 @@ import '../storage/secure_storage_service.dart';
 import 'api_exception.dart';
 
 
+
 class ApiClient {
   ApiClient(this._storage) {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
         headers: {'Content-Type': 'application/json'},
       ),
     );
@@ -75,10 +76,11 @@ class ApiClient {
     }
 
     final isConnectionIssue = error.type == DioExceptionType.connectionError ||
-        error.type == DioExceptionType.connectionTimeout;
+        error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout;
 
     // Agregamos el contenido de "data" al mensaje para saber exactamente qué responde el servidor
-    final serverResponse = data != null ? data.toString() : statusCode.toString();
+    final serverResponse = data != null ? data.toString() : '${statusCode ?? error.type.toString()}: ${error.error?.toString()} - URL: ${error.requestOptions.uri}';
 
     return error.copyWith(
       error: ApiException(

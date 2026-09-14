@@ -52,6 +52,20 @@ class EngagementRepository {
 
   // -- Reseñas (Reviews) --
 
+  Future<List<ReviewModel>> getEventReviews(String eventId) async {
+    try {
+      final response = await _apiClient.dio.get<Map<String, dynamic>>(
+        ApiConstants.eventReviews(eventId),
+      );
+      final items = response.data?['items'] as List<dynamic>? ?? [];
+      return items
+          .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw _asApiException(e);
+    }
+  }
+
   Future<ReviewModel> createReview(String eventId, int rating, String comment) async {
     try {
       final response = await _apiClient.dio.post<Map<String, dynamic>>(
@@ -70,7 +84,7 @@ class EngagementRepository {
   ApiException _asApiException(DioException e) {
     if (e.error is ApiException) return e.error as ApiException;
     return ApiException(
-      message: e.message ?? 'Ocurrió un error en engagement.',
+      message: e.message ?? 'Ocurrió un error en engagement: ${e.error ?? e.toString()}',
       statusCode: e.response?.statusCode,
     );
   }

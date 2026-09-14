@@ -8,6 +8,8 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/organizer/presentation/screens/organizer_dashboard_screen.dart';
 import '../../features/events/presentation/screens/create_event_screen.dart';
+import '../../features/attendee/presentation/screens/event_detail_view.dart';
+import '../../features/events/data/models/event_model.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -44,6 +46,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/organizer/create-event',
         builder: (context, state) => const CreateEventScreen(),
+      ),
+      GoRoute(
+        path: '/event-detail',
+        builder: (context, state) {
+          final event = state.extra as EventModel;
+          return EventDetailView(event: event);
+        },
       ),
     ],
   );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -15,6 +16,8 @@ class EventsCatalogView extends ConsumerStatefulWidget {
 }
 
 class _EventsCatalogViewState extends ConsumerState<EventsCatalogView> {
+  String _selectedCategory = 'Todos';
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +46,13 @@ class _EventsCatalogViewState extends ConsumerState<EventsCatalogView> {
     final user = ref.watch(authProvider).user;
     final eventsState = ref.watch(eventsProvider);
     final ticketsState = ref.watch(ticketsProvider);
+
+    final allEvents = eventsState.events;
+    final categories = ['Todos', ...allEvents.map((e) => e.category).toSet()];
+    
+    final filteredEvents = _selectedCategory == 'Todos'
+        ? allEvents
+        : allEvents.where((e) => e.category == _selectedCategory).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -73,10 +83,56 @@ class _EventsCatalogViewState extends ConsumerState<EventsCatalogView> {
               ),
             ],
           ),
+          if (allEvents.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: categories.map((cat) {
+                  final isSelected = _selectedCategory == cat;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(cat),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() => _selectedCategory = cat);
+                        }
+                      },
+                      selectedColor: AppColors.primaryYellow,
+                      backgroundColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: AppColors.black,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: const BorderSide(color: AppColors.black, width: 1.5),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           if (eventsState.isLoading)
             const Center(child: CircularProgressIndicator())
-          else if (eventsState.events.isEmpty)
+          else if (eventsState.errorMessage != null)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.red, width: 2),
+              ),
+              child: Text(
+                'Error: ${eventsState.errorMessage}',
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            )
+          else if (filteredEvents.isEmpty)
             Container(
               height: 120,
               width: double.infinity,
@@ -87,7 +143,9 @@ class _EventsCatalogViewState extends ConsumerState<EventsCatalogView> {
               ),
               alignment: Alignment.center,
               child: Text(
-                'Aún no hay eventos públicos\ndisponibles.',
+                _selectedCategory == 'Todos'
+                    ? 'Aún no hay eventos públicos\ndisponibles.'
+                    : 'No hay eventos en la categoría $_selectedCategory.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.black.withOpacity(0.5)),
               ),
@@ -96,9 +154,9 @@ class _EventsCatalogViewState extends ConsumerState<EventsCatalogView> {
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: eventsState.events.length,
+              itemCount: filteredEvents.length,
               itemBuilder: (context, index) {
-                final event = eventsState.events[index];
+                final event = filteredEvents[index];
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   clipBehavior: Clip.antiAlias,
@@ -169,7 +227,9 @@ class _EventsCatalogViewState extends ConsumerState<EventsCatalogView> {
                                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryYellow),
                                 ),
                                 ElevatedButton(
-                                  onPressed: ticketsState.isCheckoutLoading ? null : () => _handleBuy(event.id!),
+                                  onPressed: () {
+                                    context.push('/event-detail', extra: event);
+                                  },
                                   style: ElevatedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                     minimumSize: const Size(0, 36),
@@ -181,7 +241,7 @@ class _EventsCatalogViewState extends ConsumerState<EventsCatalogView> {
                                       side: const BorderSide(color: AppColors.black, width: 2),
                                     ),
                                   ),
-                                  child: const Text('Comprar'),
+                                  child: const Text('Ver más'),
                                 )
                               ],
                             )
