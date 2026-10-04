@@ -34,12 +34,17 @@ class TicketRepository {
         },
       );
       
-      final checkoutUrl = response.data!['checkoutUrl'] as String?;
-      if (checkoutUrl != null) {
+      final checkoutUrl = response.data?['checkoutUrl'] as String?;
+      if (checkoutUrl != null && checkoutUrl.isNotEmpty) {
         final uri = Uri.parse(checkoutUrl);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-          return true;
+        try {
+          final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+          if (launched) return true;
+        } catch (_) {}
+        try {
+          return await launchUrl(uri);
+        } catch (_) {
+          return false;
         }
       }
       return false;

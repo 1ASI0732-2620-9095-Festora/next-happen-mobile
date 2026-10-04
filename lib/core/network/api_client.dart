@@ -42,11 +42,22 @@ class ApiClient {
     final data = error.response?.data;
     final statusCode = error.response?.statusCode;
 
+    // Si es un 401 Unauthorized (token expirado o inválido)
+    if (statusCode == 401) {
+      _storage.clearSession();
+      return error.copyWith(
+        error: ApiException(
+          message: 'Tu sesión ha expirado. Por favor, cierra sesión en tu perfil e ingresa nuevamente.',
+          statusCode: statusCode,
+        ),
+      );
+    }
+
     // Si es un 403 Forbidden (no tiene permisos)
     if (statusCode == 403) {
       return error.copyWith(
         error: ApiException(
-          message: 'No tienes permisos de Organizador para crear eventos. Asegúrate de haberte registrado como Organizador.',
+          message: 'No tienes permisos para realizar esta acción.',
           statusCode: statusCode,
         ),
       );
