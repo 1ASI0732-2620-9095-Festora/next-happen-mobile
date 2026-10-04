@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../notifications/presentation/screens/notifications_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 import 'events_catalog_view.dart';
 import 'my_tickets_view.dart';
 import 'saved_events_view.dart';
@@ -21,23 +22,14 @@ class _AttendeeHomeScreenState extends ConsumerState<AttendeeHomeScreen> {
     EventsCatalogView(),
     SavedEventsView(),
     MyTicketsView(),
+    NotificationsScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: const Text('NextHappen', style: TextStyle(fontWeight: FontWeight.w800)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.black),
-            onPressed: () => ref.read(authProvider.notifier).logout(),
-          ),
-        ],
-      ),
       body: IndexedStack(
         index: _currentIndex,
         children: _views,
@@ -48,24 +40,39 @@ class _AttendeeHomeScreenState extends ConsumerState<AttendeeHomeScreen> {
         ),
         child: BottomNavigationBar(
           elevation: 0,
+          type: BottomNavigationBarType.fixed,
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
           backgroundColor: AppColors.background,
           selectedItemColor: AppColors.black,
-          unselectedItemColor: AppColors.black.withOpacity(0.5),
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+          unselectedItemColor: Colors.black.withValues(alpha: 0.45),
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.event),
+              icon: Icon(Icons.event_outlined),
+              activeIcon: Icon(Icons.event),
               label: 'Eventos',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.favorite),
+              icon: Icon(Icons.favorite_border),
+              activeIcon: Icon(Icons.favorite),
               label: 'Favoritos',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.local_activity),
-              label: 'Mis Entradas',
+              icon: Icon(Icons.confirmation_number_outlined),
+              activeIcon: Icon(Icons.confirmation_number),
+              label: 'Entradas',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.notifications_outlined),
+              activeIcon: Icon(Icons.notifications),
+              label: 'Alertas',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Perfil',
             ),
           ],
         ),

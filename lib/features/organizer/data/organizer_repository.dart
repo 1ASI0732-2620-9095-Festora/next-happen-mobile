@@ -6,6 +6,7 @@ import '../../../../core/network/api_exception.dart';
 import '../../events/data/models/event_model.dart';
 import 'models/event_attendee_model.dart';
 import 'models/sales_metrics_model.dart';
+import 'models/stand_model.dart';
 import 'models/validate_response_model.dart';
 
 class OrganizerRepository {
@@ -76,6 +77,55 @@ class OrganizerRepository {
         ApiConstants.eventSales(eventId),
       );
       return SalesMetricsModel.fromJson(response.data!);
+    } on DioException catch (e) {
+      throw _asApiException(e);
+    }
+  }
+
+  // -- Stands --
+
+  Future<List<StandModel>> getStands(String eventId) async {
+    try {
+      final response = await _apiClient.dio.get<List<dynamic>>(
+        ApiConstants.eventStands(eventId),
+      );
+      return response.data!
+          .map((e) => StandModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw _asApiException(e);
+    }
+  }
+
+  Future<StandModel> createStand(String eventId, StandModel stand) async {
+    try {
+      final response = await _apiClient.dio.post<Map<String, dynamic>>(
+        ApiConstants.eventStands(eventId),
+        data: stand.toJson(),
+      );
+      return StandModel.fromJson(response.data!);
+    } on DioException catch (e) {
+      throw _asApiException(e);
+    }
+  }
+
+  Future<StandModel> updateStand(String standId, StandModel stand) async {
+    try {
+      final response = await _apiClient.dio.put<Map<String, dynamic>>(
+        ApiConstants.standDetail(standId),
+        data: stand.toJson(),
+      );
+      return StandModel.fromJson(response.data!);
+    } on DioException catch (e) {
+      throw _asApiException(e);
+    }
+  }
+
+  Future<void> deleteStand(String standId) async {
+    try {
+      await _apiClient.dio.delete<dynamic>(
+        ApiConstants.standDetail(standId),
+      );
     } on DioException catch (e) {
       throw _asApiException(e);
     }

@@ -48,10 +48,20 @@ class TicketRepository {
     }
   }
 
+  Future<void> refundTicket(String ticketId) async {
+    try {
+      await _apiClient.dio.post<dynamic>(
+        ApiConstants.refundTicket(ticketId),
+      );
+    } on DioException catch (e) {
+      throw _asApiException(e);
+    }
+  }
+
   ApiException _asApiException(DioException e) {
     if (e.error is ApiException) return e.error as ApiException;
     return ApiException(
-      message: e.message ?? 'Ocurrió un error con la compra.',
+      message: e.message ?? 'Ocurrió un error con la operación de tickets.',
       statusCode: e.response?.statusCode,
     );
   }
