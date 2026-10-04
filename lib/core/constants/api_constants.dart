@@ -40,16 +40,17 @@ class ApiConstants {
   // Auth (IAM)
   static const String register = '/api/auth/register';
   static const String login = '/api/auth/login';
+  static const String sendOtp = '/api/auth/send-otp';
+  static const String verifyOtp = '/api/auth/verify-otp';
 
   // Events
   static const String eventsPublic = '/api/events/public';
   static const String events = '/api/events';
 
-  // Payments
+  // Payments & Tickets
   static const String checkout = '/api/payments/checkout';
-
-  // Tickets
   static String userTickets(String userId) => '/api/users/$userId/tickets';
+  static String refundTicket(String ticketId) => '/api/tickets/$ticketId/refund';
 
   // Engagement
   static String savedEvent(String userId, String eventId) => '/api/users/$userId/saved-events/$eventId';
@@ -61,4 +62,6 @@ class ApiConstants {
   static String eventTickets(String eventId) => '/api/events/$eventId/tickets';
   static const String validateTicket = '/api/tickets/validate';
   static String eventSales(String eventId) => '/api/events/$eventId/sales';
+  static String eventStands(String eventId) => '/api/events/$eventId/stands';
+  static String standDetail(String standId) => '/api/stands/$standId';
 }
