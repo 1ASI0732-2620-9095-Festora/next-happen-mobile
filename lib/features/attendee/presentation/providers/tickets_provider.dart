@@ -67,6 +67,18 @@ class TicketsNotifier extends StateNotifier<TicketsState> {
       return false;
     }
   }
+
+  Future<bool> refund(String ticketId) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _repository.refundTicket(ticketId);
+      await fetchMyTickets();
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      return false;
+    }
+  }
 }
 
 final ticketsProvider = StateNotifierProvider<TicketsNotifier, TicketsState>((ref) {
