@@ -40,7 +40,14 @@ class _EventDetailViewState extends ConsumerState<EventDetailView> {
   double get _totalPrice => widget.event.price * _quantity;
 
   Future<void> _handleCheckout() async {
-    final success = await ref.read(ticketsProvider.notifier).checkout(widget.event.id, _quantity);
+    final eventId = widget.event.id;
+    if (eventId == null || eventId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID de evento no disponible.')),
+      );
+      return;
+    }
+    final success = await ref.read(ticketsProvider.notifier).checkout(eventId, _quantity);
     if (!mounted) return;
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -56,11 +63,13 @@ class _EventDetailViewState extends ConsumerState<EventDetailView> {
 
   Future<void> _submitReview() async {
     if (_commentController.text.trim().isEmpty) return;
+    final eventId = widget.event.id;
+    if (eventId == null || eventId.isEmpty) return;
     setState(() => _isSubmittingReview = true);
 
     try {
       await ref.read(engagementProvider.notifier).addReview(
-        widget.event.id,
+        eventId,
         _rating,
         _commentController.text.trim(),
       );
@@ -86,7 +95,7 @@ class _EventDetailViewState extends ConsumerState<EventDetailView> {
     final engagementState = ref.watch(engagementProvider);
     final isCheckoutLoading = ref.watch(ticketsProvider.select((s) => s.isCheckoutLoading));
 
-    final reviews = engagementState.reviewsByEvent[widget.event.id] ?? [];
+    final reviews = engagementState.reviewsByEvent[widget.event.id ?? ''] ?? [];
     final avgRating = reviews.isEmpty
         ? 0.0
         : reviews.map((r) => r.rating).reduce((a, b) => a + b) / reviews.length;
