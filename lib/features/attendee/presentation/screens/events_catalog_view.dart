@@ -6,7 +6,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../events/presentation/providers/events_provider.dart';
 import '../../../engagement/presentation/providers/engagement_provider.dart';
+import '../../../events/data/models/event_model.dart';
 import '../providers/tickets_provider.dart';
+import '../widgets/stripe_payment_pending_dialog.dart';
 
 class EventsCatalogView extends ConsumerStatefulWidget {
   const EventsCatalogView({super.key});
@@ -27,10 +29,22 @@ class _EventsCatalogViewState extends ConsumerState<EventsCatalogView> {
     });
   }
   
-  Future<void> _handleBuy(String eventId) async {
-    // Para simplificar, compramos 1 entrada.
-    final success = await ref.read(ticketsProvider.notifier).checkout(eventId, 1);
-    if (!success && mounted) {
+  Future<void> _handleBuy(EventModel event) async {
+    final eventId = event.id;
+    if (eventId == null || eventId.isEmpty) return;
+    final initialTicketCount = ref.read(ticketsProvider).tickets.length;
+    final checkoutResult =
+        await ref.read(ticketsProvider.notifier).checkout(eventId, 1);
+    if (!mounted) return;
+
+    if (checkoutResult != null) {
+      await StripePaymentPendingDialog.show(
+        context,
+        checkoutResult: checkoutResult,
+        initialTicketCount: initialTicketCount,
+        eventTitle: event.title,
+      );
+    } else {
       final error = ref.read(ticketsProvider).errorMessage;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

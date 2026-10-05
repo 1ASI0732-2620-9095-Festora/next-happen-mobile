@@ -56,16 +56,23 @@ class TicketsNotifier extends StateNotifier<TicketsState> {
     }
   }
 
-  Future<bool> checkout(String eventId, int quantity) async {
+  Future<CheckoutResult?> checkout(String eventId, int quantity) async {
     state = state.copyWith(isCheckoutLoading: true, clearError: true);
     try {
-      final success = await _repository.checkoutEvent(eventId, quantity);
+      final result = await _repository.checkoutEvent(eventId, quantity);
+      if (result.checkoutUrl.isNotEmpty) {
+        await _repository.launchCheckoutUrl(result.checkoutUrl);
+      }
       state = state.copyWith(isCheckoutLoading: false);
-      return success;
+      return result;
     } catch (e) {
       state = state.copyWith(isCheckoutLoading: false, errorMessage: e.toString());
-      return false;
+      return null;
     }
+  }
+
+  Future<bool> confirmPayment(String sessionId) async {
+    return _repository.confirmPayment(sessionId);
   }
 
   Future<bool> refund(String ticketId) async {

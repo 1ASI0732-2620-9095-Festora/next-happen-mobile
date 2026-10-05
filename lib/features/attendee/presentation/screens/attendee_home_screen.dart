@@ -8,17 +8,12 @@ import 'events_catalog_view.dart';
 import 'my_tickets_view.dart';
 import 'saved_events_view.dart';
 
-class AttendeeHomeScreen extends ConsumerStatefulWidget {
+final attendeeTabProvider = StateProvider<int>((ref) => 0);
+
+class AttendeeHomeScreen extends ConsumerWidget {
   const AttendeeHomeScreen({super.key});
 
-  @override
-  ConsumerState<AttendeeHomeScreen> createState() => _AttendeeHomeScreenState();
-}
-
-class _AttendeeHomeScreenState extends ConsumerState<AttendeeHomeScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _views = const [
+  static const List<Widget> _views = [
     EventsCatalogView(),
     SavedEventsView(),
     MyTicketsView(),
@@ -27,11 +22,13 @@ class _AttendeeHomeScreenState extends ConsumerState<AttendeeHomeScreen> {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentIndex = ref.watch(attendeeTabProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: IndexedStack(
-        index: _currentIndex,
+        index: currentIndex,
         children: _views,
       ),
       bottomNavigationBar: Container(
@@ -41,8 +38,8 @@ class _AttendeeHomeScreenState extends ConsumerState<AttendeeHomeScreen> {
         child: BottomNavigationBar(
           elevation: 0,
           type: BottomNavigationBarType.fixed,
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
+          currentIndex: currentIndex,
+          onTap: (index) => ref.read(attendeeTabProvider.notifier).state = index,
           backgroundColor: AppColors.background,
           selectedItemColor: AppColors.black,
           unselectedItemColor: Colors.black.withValues(alpha: 0.45),

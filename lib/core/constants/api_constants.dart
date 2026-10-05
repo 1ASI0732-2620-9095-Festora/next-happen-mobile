@@ -49,6 +49,7 @@ class ApiConstants {
 
   // Payments & Tickets
   static const String checkout = '/api/payments/checkout';
+  static String confirmPayment(String sessionId) => '/api/payments/confirm?session_id=$sessionId';
   static String userTickets(String userId) => '/api/users/$userId/tickets';
   static String refundTicket(String ticketId) => '/api/tickets/$ticketId/refund';
 

@@ -7,6 +7,7 @@ import '../../../events/data/models/event_model.dart';
 import '../../../engagement/presentation/providers/engagement_provider.dart';
 import '../../../engagement/data/models/review_model.dart';
 import '../providers/tickets_provider.dart';
+import '../widgets/stripe_payment_pending_dialog.dart';
 
 class EventDetailView extends ConsumerStatefulWidget {
   const EventDetailView({super.key, required this.event});
@@ -47,16 +48,26 @@ class _EventDetailViewState extends ConsumerState<EventDetailView> {
       );
       return;
     }
-    final success = await ref.read(ticketsProvider.notifier).checkout(eventId, _quantity);
+
+    final initialTicketCount = ref.read(ticketsProvider).tickets.length;
+    final checkoutResult =
+        await ref.read(ticketsProvider.notifier).checkout(eventId, _quantity);
     if (!mounted) return;
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Redirigiendo a la pasarela de pago...')),
+
+    if (checkoutResult != null) {
+      await StripePaymentPendingDialog.show(
+        context,
+        checkoutResult: checkoutResult,
+        initialTicketCount: initialTicketCount,
+        eventTitle: widget.event.title,
       );
     } else {
       final error = ref.read(ticketsProvider).errorMessage;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error ?? 'No se pudo iniciar el pago.')),
+        SnackBar(
+          content: Text(error ?? 'No se pudo iniciar el pago.'),
+          backgroundColor: AppColors.error,
+        ),
       );
     }
   }
