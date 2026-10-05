@@ -121,8 +121,8 @@ class _StripePaymentPendingDialogState
     _isSuccess = true;
     _pollingTimer?.cancel();
 
-    // Switch tab to Entradas (index 2)
-    ref.read(attendeeTabProvider.notifier).state = 2;
+    // Switch tab to Entradas
+    ref.read(attendeeTabProvider.notifier).state = AttendeeTabs.tickets;
 
     // Pop the dialog
     Navigator.of(context).pop(true);

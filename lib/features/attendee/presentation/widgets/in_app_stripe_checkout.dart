@@ -155,7 +155,7 @@ class InAppStripeCheckout {
     } catch (_) {}
 
     // Cambiar a la pestaña de Entradas
-    ref.read(attendeeTabProvider.notifier).state = 2;
+    ref.read(attendeeTabProvider.notifier).state = AttendeeTabs.tickets;
 
     if (context.mounted) {
       context.go('/home');

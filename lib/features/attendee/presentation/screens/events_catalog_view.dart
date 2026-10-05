@@ -9,6 +9,7 @@ import '../../../engagement/presentation/providers/engagement_provider.dart';
 import '../../../events/data/models/event_model.dart';
 import '../providers/tickets_provider.dart';
 import '../widgets/in_app_stripe_checkout.dart';
+import 'attendee_home_screen.dart';
 
 class EventsCatalogView extends ConsumerStatefulWidget {
   const EventsCatalogView({super.key});
@@ -82,6 +83,55 @@ class _EventsCatalogViewState extends ConsumerState<EventsCatalogView> {
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
               ),
             ],
+          ),
+          const SizedBox(height: 18),
+          // Banner de acceso directo al Mapa Interactivo (US07)
+          GestureDetector(
+            onTap: () {
+              ref.read(attendeeTabProvider.notifier).state = AttendeeTabs.map;
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.primaryYellow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.black, width: 2),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.black, offset: Offset(3, 3)),
+                ],
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.map, size: 28, color: AppColors.black),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Explorar Ferias en el Mapa 🗺️',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.black,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Filtra por distrito, fecha y categoría en Google Maps',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.black),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 24),
           Row(

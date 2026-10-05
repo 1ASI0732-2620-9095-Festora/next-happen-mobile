@@ -5,16 +5,27 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../notifications/presentation/screens/notifications_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import 'events_catalog_view.dart';
+import 'events_map_search_view.dart';
 import 'my_tickets_view.dart';
 import 'saved_events_view.dart';
 
-final attendeeTabProvider = StateProvider<int>((ref) => 0);
+class AttendeeTabs {
+  static const int catalog = 0;
+  static const int map = 1;
+  static const int saved = 2;
+  static const int tickets = 3;
+  static const int notifications = 4;
+  static const int profile = 5;
+}
+
+final attendeeTabProvider = StateProvider<int>((ref) => AttendeeTabs.catalog);
 
 class AttendeeHomeScreen extends ConsumerWidget {
   const AttendeeHomeScreen({super.key});
 
   static const List<Widget> _views = [
     EventsCatalogView(),
+    EventsMapSearchView(),
     SavedEventsView(),
     MyTicketsView(),
     NotificationsScreen(),
@@ -43,13 +54,18 @@ class AttendeeHomeScreen extends ConsumerWidget {
           backgroundColor: AppColors.background,
           selectedItemColor: AppColors.black,
           unselectedItemColor: Colors.black.withValues(alpha: 0.45),
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 10),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 10),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.event_outlined),
-              activeIcon: Icon(Icons.event),
-              label: 'Eventos',
+              icon: Icon(Icons.explore_outlined),
+              activeIcon: Icon(Icons.explore),
+              label: 'Explorar',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.map_outlined),
+              activeIcon: Icon(Icons.map),
+              label: 'Mapa',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.favorite_border),

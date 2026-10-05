@@ -26,6 +26,8 @@ dependencies:
   mobile_scanner: ^5.2.3
   desktop_webview_window: ^0.3.0
   webview_flutter: ^4.14.1
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

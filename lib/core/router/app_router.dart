@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/attendee/presentation/screens/attendee_home_screen.dart';
 import '../../features/attendee/presentation/screens/event_detail_view.dart';
+import '../../features/attendee/presentation/screens/events_map_search_view.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -97,6 +98,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/organizer/stands',
         builder: (context, state) => const StandsManagementScreen(),
+      ),
+
+      GoRoute(
+        path: '/map',
+        builder: (context, state) => const EventsMapSearchView(),
+      ),
+      GoRoute(
+        path: '/search',
+        builder: (context, state) => const EventsMapSearchView(),
       ),
 
       // Event detail routes
