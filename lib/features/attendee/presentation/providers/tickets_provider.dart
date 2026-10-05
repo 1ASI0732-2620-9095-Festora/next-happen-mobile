@@ -60,9 +60,6 @@ class TicketsNotifier extends StateNotifier<TicketsState> {
     state = state.copyWith(isCheckoutLoading: true, clearError: true);
     try {
       final result = await _repository.checkoutEvent(eventId, quantity);
-      if (result.checkoutUrl.isNotEmpty) {
-        await _repository.launchCheckoutUrl(result.checkoutUrl);
-      }
       state = state.copyWith(isCheckoutLoading: false);
       return result;
     } catch (e) {

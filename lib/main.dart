@@ -5,7 +5,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'core/constants/app_colors.dart';
 import 'core/router/app_router.dart';
 
-void main() {
+import 'dart:io';
+import 'package:desktop_webview_window/desktop_webview_window.dart';
+
+void main(List<String> args) {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (!Platform.isAndroid && !Platform.isIOS) {
+    if (runWebViewTitleBarWidget(args)) {
+      return;
+    }
+  }
   runApp(const ProviderScope(child: NextHappenApp()));
 }
 

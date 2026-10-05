@@ -7,7 +7,7 @@ import '../../../events/data/models/event_model.dart';
 import '../../../engagement/presentation/providers/engagement_provider.dart';
 import '../../../engagement/data/models/review_model.dart';
 import '../providers/tickets_provider.dart';
-import '../widgets/stripe_payment_pending_dialog.dart';
+import '../widgets/in_app_stripe_checkout.dart';
 
 class EventDetailView extends ConsumerStatefulWidget {
   const EventDetailView({super.key, required this.event});
@@ -49,17 +49,17 @@ class _EventDetailViewState extends ConsumerState<EventDetailView> {
       return;
     }
 
-    final initialTicketCount = ref.read(ticketsProvider).tickets.length;
     final checkoutResult =
         await ref.read(ticketsProvider.notifier).checkout(eventId, _quantity);
     if (!mounted) return;
 
     if (checkoutResult != null) {
-      await StripePaymentPendingDialog.show(
-        context,
-        checkoutResult: checkoutResult,
-        initialTicketCount: initialTicketCount,
+      await InAppStripeCheckout.open(
+        context: context,
+        ref: ref,
+        checkoutUrl: checkoutResult.checkoutUrl,
         eventTitle: widget.event.title,
+        sessionId: checkoutResult.sessionId,
       );
     } else {
       final error = ref.read(ticketsProvider).errorMessage;
