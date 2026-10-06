@@ -26,7 +26,47 @@ class InAppStripeCheckout {
 
     final initialTicketCount = ref.read(ticketsProvider).tickets.length;
 
-    // Desktop: Windows, macOS, Linux
+    // 1. MODO SIMULACIÓN:
+    // Si el backend no tiene Stripe activo, devuelve session_id que empieza con 'sim_'
+    // o checkoutUrl ya apunta a /user/checkout/success. En este caso no hay formulario que llenar.
+    final isSimulation = (sessionId != null && sessionId.startsWith('sim_')) ||
+        checkoutUrl.contains('/user/checkout/success') ||
+        checkoutUrl.contains('checkout-success');
+
+    if (isSimulation) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Confirmando orden y emitiendo tu entrada...',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.primaryYellow,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      await _handleCheckoutSuccess(context, ref, sessionId);
+      return;
+    }
+
+    // 2. MODO REAL EN DESKTOP (Windows, macOS, Linux)
     if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       final isAvailable = await WebviewWindow.isWebviewAvailable();
       if (isAvailable) {
@@ -42,23 +82,27 @@ class InAppStripeCheckout {
       }
     }
 
-    // Mobile: Android, iOS
+    // 3. MODO REAL EN MOBILE (Android, iOS)
     if (Platform.isAndroid || Platform.isIOS) {
-      await Navigator.of(context).push<bool>(
+      final result = await Navigator.of(context).push<dynamic>(
         MaterialPageRoute(
           fullscreenDialog: true,
           builder: (ctx) => _InAppMobileCheckoutScreen(
             checkoutUrl: checkoutUrl,
             eventTitle: eventTitle,
             sessionId: sessionId,
-            initialTicketCount: initialTicketCount,
           ),
         ),
       );
+
+      if (result != null && result != false && context.mounted) {
+        final confirmedSession = result is String ? result : sessionId;
+        await _handleCheckoutSuccess(context, ref, confirmedSession);
+      }
       return;
     }
 
-    // Fallback: Si no hay WebView disponible en el sistema
+    // 4. FALLBACK: Si no hay WebView disponible
     final uri = Uri.tryParse(checkoutUrl);
     if (uri != null) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -104,13 +148,18 @@ class InAppStripeCheckout {
     }
 
     webview.setOnUrlRequestCallback((url) {
-      if (!handled && (url.contains('/user/checkout/success') || url.contains('session_id='))) {
+      if (!handled &&
+          url != checkoutUrl &&
+          (url.contains('/user/checkout/success') ||
+              url.contains('checkout-success') ||
+              (url.contains('session_id=') && !url.contains('checkout.stripe.com')))) {
         final uri = Uri.tryParse(url);
         final extractedSession = uri?.queryParameters['session_id'] ?? sessionId;
         onDetectedSuccess(extractedSession);
         return true;
       }
-      if (!handled && url.contains('/user/checkout/cancel')) {
+      if (!handled &&
+          (url.contains('/user/checkout/cancel') || url.contains('checkout-cancel'))) {
         handled = true;
         webview.close();
         if (context.mounted) {
@@ -125,7 +174,6 @@ class InAppStripeCheckout {
 
     webview.onClose.then((_) async {
       if (!handled) {
-        // Al cerrar la ventana, validamos si el webhook confirmó el pago mientras tanto
         try {
           if (sessionId != null && sessionId.isNotEmpty) {
             await ref.read(ticketRepositoryProvider).confirmPayment(sessionId);
@@ -167,7 +215,7 @@ class InAppStripeCheckout {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  '¡Pago completado con éxito! Tu entrada ya está disponible 🎟️',
+                  '¡Pago completado con éxito! Tu entrada ya está lista 🎟️',
                   style: TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.w700,
@@ -189,29 +237,28 @@ class InAppStripeCheckout {
   }
 }
 
-class _InAppMobileCheckoutScreen extends ConsumerStatefulWidget {
+class _InAppMobileCheckoutScreen extends StatefulWidget {
   const _InAppMobileCheckoutScreen({
     required this.checkoutUrl,
     required this.eventTitle,
     required this.sessionId,
-    required this.initialTicketCount,
   });
 
   final String checkoutUrl;
   final String eventTitle;
   final String? sessionId;
-  final int initialTicketCount;
 
   @override
-  ConsumerState<_InAppMobileCheckoutScreen> createState() =>
+  State<_InAppMobileCheckoutScreen> createState() =>
       _InAppMobileCheckoutScreenState();
 }
 
 class _InAppMobileCheckoutScreenState
-    extends ConsumerState<_InAppMobileCheckoutScreen> {
+    extends State<_InAppMobileCheckoutScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
   bool _isHandled = false;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -230,44 +277,70 @@ class _InAppMobileCheckoutScreenState
           onPageFinished: (_) {
             if (mounted) setState(() => _isLoading = false);
           },
+          onWebResourceError: (error) {
+            if (mounted && error.isForMainFrame == true) {
+              setState(() {
+                _hasError = true;
+                _isLoading = false;
+              });
+            }
+          },
           onNavigationRequest: (request) {
             if (_checkUrl(request.url)) {
+              return NavigationDecision.prevent;
+            }
+            if (!request.url.startsWith('http://') &&
+                !request.url.startsWith('https://')) {
               return NavigationDecision.prevent;
             }
             return NavigationDecision.navigate;
           },
         ),
-      )
-      ..loadRequest(Uri.parse(widget.checkoutUrl));
+      );
+
+    try {
+      _controller.loadRequest(Uri.parse(widget.checkoutUrl));
+    } catch (_) {
+      setState(() => _hasError = true);
+    }
   }
 
   bool _checkUrl(String url) {
     if (_isHandled) return true;
 
-    if (url.contains('/user/checkout/success') || url.contains('session_id=')) {
+    // Solo interceptar redirección de éxito final
+    if (url != widget.checkoutUrl &&
+        (url.contains('/user/checkout/success') ||
+            url.contains('checkout-success') ||
+            (url.contains('session_id=') &&
+                !url.contains('checkout.stripe.com')))) {
       _isHandled = true;
       final uri = Uri.tryParse(url);
       final extractedSession =
           uri?.queryParameters['session_id'] ?? widget.sessionId;
-      _onSuccess(extractedSession);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pop(extractedSession ?? true);
+        }
+      });
       return true;
     }
 
-    if (url.contains('/user/checkout/cancel')) {
+    if (url.contains('/user/checkout/cancel') ||
+        url.contains('checkout-cancel')) {
       _isHandled = true;
-      Navigator.of(context).pop(false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pago cancelado.')),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pop(false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pago cancelado.')),
+          );
+        }
+      });
       return true;
     }
 
     return false;
-  }
-
-  Future<void> _onSuccess(String? session) async {
-    Navigator.of(context).pop(true);
-    await InAppStripeCheckout._handleCheckoutSuccess(context, ref, session);
   }
 
   @override
@@ -317,7 +390,53 @@ class _InAppMobileCheckoutScreenState
               )
             : null,
       ),
-      body: WebViewWidget(controller: _controller),
+      body: _hasError
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.wifi_off, size: 48, color: AppColors.error),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No se pudo conectar a la pasarela',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Verifica tu conexión a internet o intenta nuevamente.',
+                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryYellow,
+                        foregroundColor: AppColors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: const BorderSide(color: AppColors.black, width: 2),
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _hasError = false;
+                          _isLoading = true;
+                        });
+                        _controller.loadRequest(Uri.parse(widget.checkoutUrl));
+                      },
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : WebViewWidget(controller: _controller),
     );
   }
 }
